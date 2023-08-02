@@ -1,5 +1,30 @@
 # Weavegrid Backend Coding Assessment
 
+## Custom additions from @colinyoung follow :point-down:
+
+### Running this project:
+
+As a Dockerized application, it makes sense to build and run this application quickly, especially so you
+don't have to deal with Python version issues. I found one way to do this:
+
+```
+docker run --rm -p 8080:80 -it $(docker build -q .) # Credit: https://stackoverflow.com/a/51314059
+
+# Then, you can access the API at http://localhost:8080.
+curl -i http://localhost:8080
+
+# You can also change the base directory of the application (which must be a subdir of `filesystem_crawler`) using:
+docker run -e UVICORN_BASEDIR=other_files --rm -p 8080:80 -it $(docker build -q .)
+
+# You can, of course, run your Docker image however you like.
+```
+
+### Env vars
+
+- UVICORN_BASEDIR: string
+
+-----
+
 ## Introduction
 
 The purpose of this exercise is for you to show us what you're made of! We know you can code, 
