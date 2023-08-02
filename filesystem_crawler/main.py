@@ -4,21 +4,24 @@ from fastapi import FastAPI, Response
 import uvicorn
 
 from .result import Result
+from .input import Input
 
 app = FastAPI()
 
 # Basedir defaults to UVICORN_BASEDIR environment variable, which is case sensitive.
 default_path = "files"
+envdir = os.environ.get("UVICORN_BASEDIR", default_path)
+if envdir == ".":
+    raise ValueError("Cannot use current directory as basedir")
+
 basedir = os.path.join(os.path.dirname(__file__),
-                       os.environ.get("UVICORN_BASEDIR", default_path))
+                       envdir)
 
 print(f"Starting filesystem crawler in {basedir}.")
-
 
 def index_of(path, response):
     try:
         results = []
-        print(path)
         for entry in os.scandir(path):
             results.append(Result(entry=entry))
         return results
@@ -44,12 +47,15 @@ def contents_of(result: Result, response: Response):
         response.status_code = 400
         return {"error": "Cannot read a directory"}
 
-# List contents of root directory
-# I'd prefer to have this
 
+def upsert_file(input: Input, path: str):
+    try:
+        input.save(path)
+    except Exception as e:
+        raise e
 
 @app.get("/")
-async def root(response: Response) -> list[Result]:
+async def root_dir(response: Response) -> list[Result]:
     return index_of(basedir, response)
 
 # List contents of any directory - must be subdir of basedir
@@ -58,17 +64,35 @@ async def root(response: Response) -> list[Result]:
 
 
 @app.get("/{path:path}") # https://fastapi.tiangolo.com/tutorial/path-params/#path-convertor
-async def path_index(path: str, response: Response) -> list[Result]:
+async def get_file_or_directory_at_path(path: str, response: Response) -> list[Result]:
     safe_path = os.path.join(basedir, path)
     try:
         result = Result(path=safe_path)
         if result.type == "file":
             return contents_of(result, response)
 
-        return index_of(safe_path, response)
     except FileNotFoundError:
         response.status_code = 404
         return {"error": "File not found"}
+
+@app.post("/{path:path}")
+async def upsert_file_or_directory_at_path(input: Input, path: str, response: Response) -> list[Result]:
+    try:
+        dir = Result(path=basedir)
+        if dir.type != "directory":
+            response.status_code = 400
+            return {"error": "Not a valid directory for file"}
+        
+        safe_path = os.path.join(basedir, path)
+        result = upsert_file(input, safe_path)
+        if result == None:
+            # directory created
+            response.status_code = 200 # No Content
+            return { "status" : f"Directory now exists at {path}" }
+        return { "contents" : result }
+    except Exception as e:
+        response.status_code = 400
+        return {"error": e.__str__()}
 
 
 # Setting host and port for application to run on

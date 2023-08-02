@@ -1,0 +1,8 @@
+__pycache__
+
+files/
+!files/a
+files/*
+!files/subfolder/b
+other_files/
+!other_files/test.txt
