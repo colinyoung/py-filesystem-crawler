@@ -1,6 +1,6 @@
 # Weavegrid Backend Coding Assessment
 
-## Custom additions from @colinyoung follow :point-down:
+## Custom additions from @colinyoung follow 👇
 
 ### Running this project:
 
@@ -16,7 +16,6 @@ curl -i http://localhost:8080
 
 # You can also change the base directory of the application (which must be a subdir of `filesystem_crawler`) using:
 
-```
 export DIR="other_files" && docker run -e UVICORN_BASEDIR=$DIR \
   -v `pwd`:`pwd` \
   -w `pwd` \
