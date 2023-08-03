@@ -37,6 +37,11 @@ My methodology:
 - Use the FastAPI `*:path` construction to allow paths to be passed and therefore subdirectories to be rendered.
 - I'm using the unix filesystem functions on the `os` module, like `fstat`, to get file information like owner.
 
+### Running tests
+
+- `pip install -r requirements-dev.txt`
+- `python -m unittest tests/test_main.py`
+
 -----
 
 **Original Readme follows below.**

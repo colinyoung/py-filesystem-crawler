@@ -1,6 +1,6 @@
 import os
 
-from fastapi import FastAPI, Response
+from fastapi import FastAPI, Response, Request
 import uvicorn
 
 from .result import Result
@@ -50,7 +50,7 @@ def contents_of(result: Result, response: Response):
 
 def upsert_file(input: Input, path: str):
     try:
-        input.save(path)
+        return input.save(path)
     except Exception as e:
         raise e
 
@@ -76,20 +76,27 @@ async def get_file_or_directory_at_path(path: str, response: Response) -> list[R
         return {"error": "File not found"}
 
 @app.post("/{path:path}")
-async def upsert_file_or_directory_at_path(input: Input, path: str, response: Response) -> list[Result]:
+async def upsert_file_or_dir_at_path(path: str, response: Response, request: Request) -> list[Result]:
     try:
         dir = Result(path=basedir)
         if dir.type != "directory":
             response.status_code = 400
             return {"error": "Not a valid directory for file"}
         
+        contents = await request.body()
+        if len(contents) > 0:
+            json = await request.json()
+            contents = json["contents"]
+            
+        input = Input(contents=contents)
         safe_path = os.path.join(basedir, path)
         result = upsert_file(input, safe_path)
         if result == None:
             # directory created
             response.status_code = 200 # No Content
-            return { "status" : f"Directory now exists at {path}" }
-        return { "contents" : result }
+            return { "status" : f"Directory created", "name": path }
+        
+        return { "contents" : result, "name": path }
     except Exception as e:
         response.status_code = 400
         return {"error": e.__str__()}
